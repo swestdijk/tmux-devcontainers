@@ -5,14 +5,21 @@ JSON_FILE="${CURRENT_PANE_PATH}/.devcontainer/devcontainer.json"
 BASE_COMMAND="docker compose"
 
 get_project_name() {
+    local -r compose_file="$1"
     local project_name=""
 
     if [[ -n "${COMPOSE_PROJECT_NAME}" ]]; then
         project_name=${COMPOSE_PROJECT_NAME}
-    elif [[ "$(grep -e '^name:' ${JSON_FILE} | awk '{print $2}')" != "" ]]; then
-        project_name=$(grep -i -e '^name:' ${JSON_FILE} | awk '{print $2}')
-    else
-        project_name="$(basename ${CURRENT_PANE_PATH})_devcontainer"
+    elif [[ -z "${compose_file}" ]]; then
+        project_name=$(devcontainer read-configuration --workspace-folder "${CURRENT_PANE_PATH}" 2>/dev/null | jq -r '.configuration.name')
+    fi
+
+    if [[ -z "${project_name}" ]] || [[ "${project_name}" == "null" ]]; then
+        if [[ -n "${compose_file}" ]]; then
+            project_name="$(basename ${CURRENT_PANE_PATH})_devcontainer"
+        else
+            project_name="$(basename ${CURRENT_PANE_PATH})"
+        fi
     fi
 
     echo "${project_name}"
@@ -26,6 +33,16 @@ get_compose_config() {
     fi
 
     echo "${compose_file}"
+}
+
+get_docker_config() {
+    local docker_file=$(grep -i -e 'dockerFile' ${JSON_FILE} | awk '{print $2}' | sed -e 's/"\(.*\)",$/\1/' )
+
+    if [[ -n "${docker_file}" ]]; then
+        docker_file="${CURRENT_PANE_PATH}/.devcontainer/${compose_file}"
+    fi
+
+    echo "${docker_file}"
 }
 
 compose_status() {
@@ -62,10 +79,14 @@ compose_status() {
 }
 
 plain_status() {
+    local -r project_name="$1"
     local docker_status=""
 
-    project_name="$(basename ${CURRENT_PANE_PATH})"
-    status=$(docker ps -a --format json | jq ". | select(.Image | contains(\"${project_name}\")) | .State" | sed -e 's/"//g')
+    status=$(docker ps -a --format json | jq -r ". | select(.Names | contains(\"${project_name}\")) | .State")
+    if [[ -z "${status}" ]]; then
+        status=$(docker ps -all --format json | jq -r ". | select(.Image | contains(\"${project_name}\")) | .State")
+    fi
+
     if [[ -n "${status}" ]]; then
         docker_status="${project_name}: ${status} "
     else
@@ -81,20 +102,18 @@ plain_status() {
 }
 
 if [ -f "${JSON_FILE}" ]; then
-    # Workspace has devcontainers
-    # workspace_name=$(devcontainer read-configuration --workspace-folder . | jq ".configuration.name")
-    # workspace_name=${workspace_name//\"/} # remove quotes
     compose_file=$(get_compose_config)
-    project_name=$(get_project_name)
+    docker_file=$(get_docker_config)
+    project_name=$(get_project_name "${compose_file}")
 
     if [[ -n "${compose_file}" ]]; then
         docker_status=$(compose_status "${compose_file}" "${project_name}")
     else
-        docker_status=$(plain_status)
+        docker_status=$(plain_status "${project_name}")
     fi
 
     echo ${docker_status}
 else
     # Workspace does not have devcontainers
-    echo "N/A"
+    echo "N/A" 
 fi
