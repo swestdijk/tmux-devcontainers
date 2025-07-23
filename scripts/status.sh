@@ -16,9 +16,9 @@ get_project_name() {
 
     if [[ -z "${project_name}" ]] || [[ "${project_name}" == "null" ]]; then
         if [[ -n "${compose_file}" ]]; then
-            project_name="$(basename ${CURRENT_PANE_PATH})_devcontainer"
+            project_name="${CURRENT_PANE_PATH##*/}_devcontainer"
         else
-            project_name="$(basename ${CURRENT_PANE_PATH})"
+            project_name="${CURRENT_PANE_PATH##*/}"
         fi
     fi
 
@@ -26,7 +26,9 @@ get_project_name() {
 }
 
 get_compose_config() {
-    local compose_file=$(grep -i -e 'dockerComposeFile' ${JSON_FILE} | awk '{print $2}' | sed -e 's/"\(.*\)",$/\1/' )
+    local compose_file=""
+    compose_file=$(grep -i -e 'dockerComposeFile' ${JSON_FILE})
+    compose_file=$(tmp=${compose_file##* }; tmp=${tmp//\"/}; echo "${tmp/,/}")
 
     if [[ -n "${compose_file}" ]]; then
         compose_file="${CURRENT_PANE_PATH}/.devcontainer/${compose_file}"
@@ -36,7 +38,8 @@ get_compose_config() {
 }
 
 get_docker_config() {
-    local docker_file=$(grep -i -e 'dockerFile' ${JSON_FILE} | awk '{print $2}' | sed -e 's/"\(.*\)",$/\1/' )
+    local docker_file=$(grep -i -e 'dockerFile' ${JSON_FILE})
+    docker_file=$(tmp=${docker_file##* }; tmp=${tmp//\"/}; echo "${tmp/,/}")
 
     if [[ -n "${docker_file}" ]]; then
         docker_file="${CURRENT_PANE_PATH}/.devcontainer/${compose_file}"
@@ -66,7 +69,7 @@ compose_status() {
         docker_status=""
         for service in ${services}
         do
-            image=$(docker images | grep "${project_name}-${service}")
+            image=$(docker images -q --filter reference="*${project_name}-${service}*:*")
             if [[ -n "${image}" ]]; then
                 docker_status="${docker_status} ${service}: built"
             else
@@ -90,7 +93,8 @@ plain_status() {
     if [[ -n "${status}" ]]; then
         docker_status="${project_name}: ${status} "
     else
-        image=$(docker images | grep "${project_name}")
+        #image=$(docker images -q --filter reference="*${project_name}*:*")
+        image=$(docker images -a | grep -E ".*(${CURRENT_PANE_PATH##*/}|${project_name}).*")
         if [[ -n "${image}" ]]; then
             docker_status="${project_name}: built"
         else
@@ -115,5 +119,5 @@ if [ -f "${JSON_FILE}" ]; then
     echo ${docker_status}
 else
     # Workspace does not have devcontainers
-    echo "N/A" 
+    echo "N/A"
 fi
