@@ -1,9 +1,22 @@
 #! /usr/bin/env bash
 
+#####################################################################
+#
+# Globals
+#
+#####################################################################
 CURRENT_PANE_PATH=$(tmux display-message -p -F "#{pane_current_path}")
 JSON_FILE="${CURRENT_PANE_PATH}/.devcontainer/devcontainer.json"
 BASE_COMMAND="docker compose"
 
+#####################################################################
+#
+# get_project_name
+#
+# Try to get the project name for devcontainers with or whithout
+# docker compose
+#
+#####################################################################
 get_project_name() {
     local -r compose_file="$1"
     local project_name=""
@@ -25,9 +38,16 @@ get_project_name() {
     echo "${project_name}"
 }
 
+#####################################################################
+#
+# get_compose_config
+#
+# Try to get the the docker compose file
+#
+#####################################################################
 get_compose_config() {
     local compose_file=""
-    compose_file=$(grep -i -e 'dockerComposeFile' ${JSON_FILE})
+    compose_file=$(grep -i -e 'dockerComposeFile' "${JSON_FILE}")
     compose_file=$(tmp=${compose_file##* }; tmp=${tmp//\"/}; echo "${tmp/,/}")
 
     if [[ -n "${compose_file}" ]]; then
@@ -37,8 +57,16 @@ get_compose_config() {
     echo "${compose_file}"
 }
 
+#####################################################################
+#
+# get_docker_config
+#
+# Try to get the the Dockerfile
+#
+#####################################################################
 get_docker_config() {
-    local docker_file=$(grep -i -e 'dockerFile' ${JSON_FILE})
+    local docker_file=""
+    docker_file=$(grep -i -e 'dockerFile' "${JSON_FILE}")
     docker_file=$(tmp=${docker_file##* }; tmp=${tmp//\"/}; echo "${tmp/,/}")
 
     if [[ -n "${docker_file}" ]]; then
@@ -48,6 +76,13 @@ get_docker_config() {
     echo "${docker_file}"
 }
 
+#####################################################################
+#
+# compose_status
+#
+# return devcontainer status when using docker compose
+#
+#####################################################################
 compose_status() {
     local -r compose_file="$1"
     local -r project_name="$2"
@@ -81,6 +116,13 @@ compose_status() {
     echo "${docker_status}"
 }
 
+#####################################################################
+#
+# plain_status
+#
+# return devcontainer status when using a Dockerfile or none
+#
+#####################################################################
 plain_status() {
     local -r project_name="$1"
     local docker_status=""
@@ -105,6 +147,11 @@ plain_status() {
     echo "${docker_status}"
 }
 
+#####################################################################
+#
+# Main code
+#
+#####################################################################
 if [ -f "${JSON_FILE}" ]; then
     compose_file=$(get_compose_config)
     docker_file=$(get_docker_config)
@@ -116,6 +163,7 @@ if [ -f "${JSON_FILE}" ]; then
         docker_status=$(plain_status "${project_name}")
     fi
 
+    # shellcheck disable=SC2086
     echo ${docker_status}
 else
     # Workspace does not have devcontainers
