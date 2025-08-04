@@ -1,3 +1,4 @@
+#!/usr/bin/bash -x
 #! /usr/bin/env bash
 
 #####################################################################
@@ -46,15 +47,24 @@ get_project_name() {
 #
 #####################################################################
 get_compose_config() {
-    local compose_file=""
-    compose_file=$(grep -i -e 'dockerComposeFile' "${JSON_FILE}")
-    compose_file=$(tmp=${compose_file##* }; tmp=${tmp//\"/}; echo "${tmp/,/}")
+    local compose_files=""
+    local compose_files_fp=""
 
-    if [[ -n "${compose_file}" ]]; then
-        compose_file="${CURRENT_PANE_PATH}/.devcontainer/${compose_file}"
+    if [[ -n "$(grep -i -e 'dockerComposeFile": \[' ${JSON_FILE})" ]]; then
+        compose_files=$(grep -v "//" ${JSON_FILE} | jq -r '.dockerComposeFile |= join(" ") | .dockerComposeFile')
+    else
+        compose_files=$(grep -i -e 'dockerComposeFile' \"${JSON_FILE}\")
+        compose_files=$(tmp=${compose_file##* }; tmp=${tmp//\"/}; echo "${tmp/,/}")
     fi
 
-    echo "${compose_file}"
+    if [[ -n "${compose_files}" ]]; then
+        for compose_file in ${compose_files}
+        do
+            compose_files_fp="${compose_files_fp} ${CURRENT_PANE_PATH}/.devcontainer/${compose_file}"
+        done
+    fi
+
+    echo "${compose_files_fp}"
 }
 
 #####################################################################
@@ -84,7 +94,7 @@ get_docker_config() {
 #
 #####################################################################
 compose_status() {
-    local -r compose_file="$1"
+    local -r compose_files="$1"
     local -r project_name="$2"
     local docker_status=""
     local docker_command=${BASE_COMMAND}
@@ -93,25 +103,29 @@ compose_status() {
         docker_command="${docker_command} -p ${project_name}"
     fi
 
-    if [[ -n "${compose_file}" ]]; then
-        docker_command="${docker_command} -f ${compose_file}"
-    fi
-
-    docker_status=$(${docker_command} ps --all --format json | jq -r '. | "\(.Service):\(.State)"')
-    
-    if [[ -z "${docker_status}" ]]; then
-        services=$(${docker_command} config --services)
-        docker_status=""
-        for service in ${services}
-        do
-            image=$(docker images -q --filter reference="*${project_name}-${service}*:*")
-            if [[ -n "${image}" ]]; then
-                docker_status="${docker_status} ${service}: built"
-            else
-                docker_status="${docker_status} ${service}: unknown"
-            fi
-        done
-    fi
+    docker_status=""
+    for compose_file in ${compose_files}
+    do
+        docker_status_tmp=$(${docker_command} -f "${compose_file}" ps --all --format json | jq -r '. | "\(.Service):\(.State)"')
+        
+        if [[ -z "${docker_status_tmp}" ]]; then
+            services=$(${docker_command} -f "${compose_file}" config --services)
+            for service in ${services}
+            do
+                image=$(docker images -q --filter reference="*${project_name//-/*}*${service}*:*")
+                if [[ -n "${image}" ]]; then
+                    image_status="built"
+                else
+                    image_status="unknown"
+                fi
+                if [[ "${docker_status}" != *${service}* ]]; then
+                    docker_status="${docker_status} ${service}: ${image_status}"
+                fi
+            done
+        else
+            docker_status="${docker_status_tmp}"
+        fi
+    done
 
     echo "${docker_status}"
 }
@@ -135,8 +149,7 @@ plain_status() {
     if [[ -n "${status}" ]]; then
         docker_status="${project_name}: ${status} "
     else
-        #image=$(docker images -q --filter reference="*${project_name}*:*")
-        image=$(docker images -a | grep -E ".*(${CURRENT_PANE_PATH##*/}|${project_name}).*")
+        image=$(docker images -a | grep -E ".*(${CURRENT_PANE_PATH##*/}|${project_name//-/*}).*")
         if [[ -n "${image}" ]]; then
             docker_status="${project_name}: built"
         else
@@ -153,12 +166,12 @@ plain_status() {
 #
 #####################################################################
 if [ -f "${JSON_FILE}" ]; then
-    compose_file=$(get_compose_config)
+    compose_files=$(get_compose_config)
     docker_file=$(get_docker_config)
     project_name=$(get_project_name "${compose_file}")
 
-    if [[ -n "${compose_file}" ]]; then
-        docker_status=$(compose_status "${compose_file}" "${project_name}")
+    if [[ -n "${compose_files}" ]]; then
+        docker_status=$(compose_status "${compose_files}" "${project_name}")
     else
         docker_status=$(plain_status "${project_name}")
     fi
