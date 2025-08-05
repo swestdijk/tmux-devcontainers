@@ -51,7 +51,7 @@ get_devcontainer_config() {
     local current_pane_path=$(tmux display-message -p -F "#{pane_current_path}")
     local devcontainer_json_file="${current_pane_path}/.devcontainer/devcontainer.json"
     local json=$(devcontainer read-configuration --workspace-folder "${current_pane_path}" 2>/dev/null)
-    local value=$(echo $json | jq -r "${key_path}")
+    local value=$(echo "$json" | jq -r "${key_path}")
 
     echo "$value"
 }
