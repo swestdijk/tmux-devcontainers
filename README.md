@@ -28,7 +28,7 @@ Key bindings can be customized by setting the following options in your `~/.tmux
 
 ```bash
 set-option -g @devcontainers_exec_key 'T' # default: 'E'
-set-option -g @devcontainers_menu_key 'M' # default: 'Ctrl + e
+set-option -g @devcontainers_menu_key 'M' # default: 'Ctrl + e'
 ```
 
 ## Installation
