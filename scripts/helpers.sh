@@ -56,3 +56,4 @@ get_devcontainer_config() {
     echo "$value"
 }
 
+echo "Helpers loaded successfully."
