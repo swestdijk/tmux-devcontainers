@@ -15,7 +15,7 @@ run_up() {
 # Run docker compose down command in a new tmux window
 run_down() {
     tmux display-message "Stopping devcontainer..."
-    tmux new-window -n "devcontainer_down" -c $(get_workspace_dir) "tmux set-option remain-on-exit failed; docker compose down"
+    tmux new-window -n "devcontainer_down" -c "$(get_workspace_dir)" "tmux set-option remain-on-exit failed; docker compose down"
 }
 
 rebuild() {
