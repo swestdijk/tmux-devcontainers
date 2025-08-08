@@ -1,7 +1,5 @@
 # tmux-devcontainers
-A Tmux plugin for working with [devcontainers](https://containers.dev)
-
-## Features
+A Tmux plugin for working with [devcontainers](https://containers.dev) featuring:
 
 - Status bar placeholders to show the status of the devcontainers for the current workspace.
 - Key binding to create a new login shell in the devcontainer (via devcontainer exec).
@@ -9,14 +7,22 @@ A Tmux plugin for working with [devcontainers](https://containers.dev)
 
 ### Status bar integration
 
+![Status information](https://github.com/phil/tmux-devcontainers/blob/main/resources/status-bar-integration.png?raw=true)
+
 tmux-devcontainers provides a status bar placeholder to show the status of the devcontainers from your docker-compose file:
 
 ```bash
 set -g status-right '#{devcontainers_workspace} #{devcontainers_status}'
 ```
 
-- devcontainers_workspace: shows the name of the devcontainer workspace.
-- devcontainers_status: shows the status of each container in the workspace.
+- `#{devcontainers_workspace}`: shows the name of the devcontainer workspace.
+- `#{devcontainers_status}`: shows the status of each container in the workspace.
+
+### Menu commands
+
+![Status information](https://github.com/phil/tmux-devcontainers/blob/main/resources/menu-commands.png?raw=true)
+
+Commands to manage devcontainers. Commands run in new windows and try to be unintrusive by automatically closing on success.
 
 ### Key bindings
 
