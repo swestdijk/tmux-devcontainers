@@ -1,18 +1,20 @@
+log() {
+    echo "$1" >&2
+}
+
+
 # Get Tmux option value, if not set, use default value
 # checks for local, then global options
 #
 # Usage
 # get_tmux_option <option> <default_value>
 get_tmux_option() {
-    local option
-    local default_value
-    local option_value
-    option="$1"
-    default_value="$2"
-    option_value="$(tmux show-option -qv "$option")"
+    local option="$1"
+    local default_value="$2"
+    local option_value=$(tmux show-option -qv "$option")
 
     if [ -z "$option_value" ]; then
-        option_value="$(tmux show-option -gqv "$option")"
+        option_value=$(tmux show-option -gqv "$option")
     fi
 
     if [ -z "$option_value" ]; then
@@ -32,3 +34,40 @@ set_tmux_option() {
     tmux set-option -gq "$option" "$value"
 }
 
+# Get the current pane's path
+get_current_pane_path() {
+    local current_pane_path=$(tmux display-message -p -F "#{pane_current_path}")
+    echo "$current_pane_path"
+}
+
+# Get the workspace directory from the current pane's path
+# This function will check parent directories for a .devcontainer directory, 
+# and return the path to the workspace directory.
+get_workspace_dir() {
+    local current_dir="$(get_current_pane_path)"
+    
+    current_dir=$(realpath "$current_dir")
+    
+    while [[ "$current_dir" != "/" ]]; do
+        if [[ -d "$current_dir/.devcontainer" ]]; then
+            break
+        fi
+        current_dir=$(dirname "$current_dir")
+    done
+
+    echo "$current_dir"
+}
+
+# Get devcontainer configuration value from the current pane's devcontainer.json
+# expects the key_path to be a valid jq path
+#
+# Usage
+# get_devcontainer_config <key_path>
+# Example: get_devcontainer_config ".configuration.name"
+get_devcontainer_config() {
+    local key_path="$1"
+    local json=$(devcontainer read-configuration --workspace-folder "$(get_workspace_dir)" 2>/dev/null)
+    local value=$(echo "$json" | jq -r "${key_path}")
+
+    echo "$value"
+}
