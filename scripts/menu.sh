@@ -6,12 +6,22 @@ source "$CURRENT_DIR/helpers.sh"
 
 # Run devcontainer up command in a new tmux window
 run_up() {
-    tmux new-window -n "devcontainer_build" -c $(get_current_pane_path) "devcontainer up --workspace-folder ."; set-option remain-on-exit failed
+    tmux display-message "Starting devcontainer..."
+    tmux new-window -n "devcontainer_build" -c "$(get_workspace_dir)" "tmux set-option remain-on-exit failed; devcontainer up --workspace-folder ."
 }
+
+# tmux new-window -c "your-directory" "your-command; tmux set-option -t $TMUX_PANE remain-on-exit off"
 
 # Run docker compose down command in a new tmux window
 run_down() {
-    tmux new-window -n "devcontainer_down" -c $(get_current_pane_path) "docker compose down"; set-option remain-on-exit failed
+    tmux display-message "Stopping devcontainer..."
+    tmux new-window -n "devcontainer_down" -c $(get_workspace_dir) "tmux set-option remain-on-exit failed; docker compose down"
+}
+
+rebuild() {
+    tmux display-message "Rebuilding devcontainer..."
+    $(run_down)
+    $(run_up)
 }
 
 show_menu() {
@@ -19,13 +29,15 @@ show_menu() {
 
     tmux display-menu -T " Devcontainers " \
         "" \
-        "-Namespace: #[fg=white]${project_name}" "" "" \
+        "-Workspace: #[fg=white]${project_name}" "" "" \
         "" \
         "Up"                    u "run -b 'source $CURRENT_DIR/menu.sh && run_up'" \
         "Down (docker compose)" d "run -b 'source $CURRENT_DIR/menu.sh && run_down'" \
-        "Exec in popup"         e "display-popup -EE 'devcontainer exec --workspace-folder . /bin/bash'" \
-        "Exec in new window"    E "new-window 'devcontainer exec --workspace-folder . /bin/bash'" \
+        "ReBuild"               r "run -b 'source $CURRENT_DIR/menu.sh && run_rebuild'" \
+        "Exec in popup"         e "display-popup -EE 'devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash'" \
+        "Exec in new window"    E "new-window 'devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash'" \
         "" \
         "-All commands work with the devcontainers cli," "" "" \
-        "-except commands specified with 'docker compose'" "" ""
+        "-except commands specified with 'docker compose'" "" "" \
+        "-Exec commands assume bash is available in the container" "" ""
 }
