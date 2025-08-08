@@ -20,8 +20,8 @@ run_down() {
 
 rebuild() {
     tmux display-message "Rebuilding devcontainer..."
-    $(run_down)
-    $(run_up)
+    run_down
+    run_up
 }
 
 show_menu() {
