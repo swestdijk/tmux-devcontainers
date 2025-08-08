@@ -18,7 +18,7 @@ run_down() {
     tmux new-window -n "devcontainer_down" -c "$(get_workspace_dir)" "tmux set-option remain-on-exit failed; docker compose down"
 }
 
-rebuild() {
+run_rebuild() {
     tmux display-message "Rebuilding devcontainer..."
     run_down
     run_up
