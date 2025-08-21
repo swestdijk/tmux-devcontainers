@@ -24,6 +24,14 @@ run_rebuild() {
     run_up
 }
 
+run_exec_in_popup() {
+    tmux display-popup -EE "devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash"
+}
+
+run_exec_in_window() {
+    tmux new-window "devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash"
+}
+
 show_menu() {
     local project_name=$(get_devcontainer_config ".configuration.name")
 
@@ -34,8 +42,8 @@ show_menu() {
         "Up"                    u "run -b 'source $CURRENT_DIR/menu.sh && run_up'" \
         "Down (docker compose)" d "run -b 'source $CURRENT_DIR/menu.sh && run_down'" \
         "ReBuild"               r "run -b 'source $CURRENT_DIR/menu.sh && run_rebuild'" \
-        "Exec in popup"         e "display-popup -EE 'devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash'" \
-        "Exec in new window"    E "new-window 'devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash'" \
+        "Exec in popup"         e "run -b 'source $CURRENT_DIR/menu.sh && run_exec_in_popup'" \
+        "Exec in new window"    E "run -b 'source $CURRENT_DIR/menu.sh && run_exec_in_window'" \
         "" \
         "-All commands work with the devcontainers cli," "" "" \
         "-except commands specified with 'docker compose'" "" "" \

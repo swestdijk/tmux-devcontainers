@@ -27,14 +27,14 @@ interpolate_tmux_option() {
     set_tmux_option "$option" "$option_value"
 }
 
-
 main() {
     interpolate_tmux_option "status-right"
     interpolate_tmux_option "status-left"
 
-    tmux bind-key $(get_tmux_option "@devcontainers_exec_key" "E") "new-window 'devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash'"
+    # tmux bind-key $(get_tmux_option "@devcontainers_exec_key" "E") "new-window 'devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash'"
+    tmux bind-key $(get_tmux_option "@devcontainers_exec_key" "E") "run -b 'source $CURRENT_DIR/scripts/menu.sh && run_exec_in_window'"
 
-    tmux bind-key $(get_tmux_option "@devcontainers_menu_key" "C-e") run -b "source $CURRENT_DIR/scripts/menu.sh && show_menu"
+    tmux bind-key $(get_tmux_option "@devcontainers_menu_key" "C-e") "run -b 'source $CURRENT_DIR/scripts/menu.sh && show_menu'"
 }
 
 main
