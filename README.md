@@ -27,8 +27,21 @@ Commands to manage devcontainers. Commands run in new windows and try to be unin
 ### Key bindings
 
 tmux-devcontainers provides a key bindings to interact with the devcontainers:
+
 - prefix + E: creates a new tmux pane with a login shell in the devcontainer.
 - prefix + (Ctrl + e): shows a menu to interact with the devcontainers in the current workspace.
+
+The Exec command will default to running `/bin/bash` in the devcontainer. This can be overridden per project by adding the following to your `devcontainer.json`:
+
+```json
+{
+    "customizations": {
+        "tmux": {
+            "execCommand": "/bin/sh" // or "rails console", etc.
+        }
+    },
+}
+```
 
 Key bindings can be customized by setting the following options in your `~/.tmux.conf` file:
 

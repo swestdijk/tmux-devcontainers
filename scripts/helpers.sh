@@ -62,12 +62,24 @@ get_workspace_dir() {
 # expects the key_path to be a valid jq path
 #
 # Usage
-# get_devcontainer_config <key_path>
+# get_devcontainer_config <key_path> <default_value>
 # Example: get_devcontainer_config ".configuration.name"
+# Example: get_devcontainer_config ".configuration.name" "app-server"
 get_devcontainer_config() {
     local key_path="$1"
+    local default_value="$2"
     local json=$(devcontainer read-configuration --workspace-folder "$(get_workspace_dir)" 2>/dev/null)
-    local value=$(echo "$json" | jq -r "${key_path}")
+    local value=$(echo "$json" | jq -r "${key_path} // \"\"")
 
-    echo "$value"
+
+    if [ ! -z "$value" ]; then
+        echo "$value"
+    else
+        echo "$default_value"
+    fi
+}
+
+get_exec_command() {
+    exec_command=$(get_devcontainer_config ".configuration.customizations.tmux.execCommand" "/bin/bash")
+    echo "$exec_command"
 }

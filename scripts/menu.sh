@@ -25,11 +25,11 @@ run_rebuild() {
 }
 
 run_exec_in_popup() {
-    tmux display-popup -EE "devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash"
+    tmux display-popup -EE "devcontainer exec --workspace-folder $(get_workspace_dir) $(get_exec_command)"
 }
 
 run_exec_in_window() {
-    tmux new-window "devcontainer exec --workspace-folder $(get_workspace_dir) /bin/bash"
+    tmux new-window "devcontainer exec --workspace-folder $(get_workspace_dir) $(get_exec_command)"
 }
 
 show_menu() {
