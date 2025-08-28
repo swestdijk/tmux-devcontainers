@@ -142,10 +142,11 @@ compose_status() {
 plain_status() {
     local -r project_name="$1"
     local docker_status=""
+    set -x
 
-    status=$(docker ps -a --format json | jq -r ". | select(.Names | contains(\"${project_name}\")) | .State")
+    status=$(docker ps -a --format json | jq -r ". | select(.Names | contains(\"${project_name}\") or contains(\"${CURRENT_PANE_PATH##*/}\")) | .State")
     if [[ -z "${status}" ]]; then
-        status=$(docker ps -all --format json | jq -r ". | select(.Image | contains(\"${project_name}\")) | .State")
+        status=$(docker ps -all --format json | jq -r ". | select(.Image | contains(\"${project_name}\") or contains(\"${CURRENT_PANE_PATH##*/}\")) | .State")
     fi
 
     if [[ -n "${status}" ]]; then
@@ -158,6 +159,7 @@ plain_status() {
             docker_status="${project_name}: unkown"
         fi
     fi
+    set +x
 
     echo "${docker_status}"
 }
